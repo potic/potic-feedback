@@ -1,0 +1,26 @@
+= potic-feedback
+:linkattrs:
+
+Service for collecting feedback about articles.
+
+== Travis job
+
+image:https://travis-ci.org/potic/potic-feedback.svg?branch=develop["Travis job", link="https://travis-ci.org/potic/potic-feedback"]
+
+== Code coverage
+
+image:https://codecov.io/gh/potic/potic-feedback/branch/develop/graph/badge.svg["Code coverage", link="https://codecov.io/gh/potic/potic-feedback"]
+
+== Docker repository
+
+https://hub.docker.com/r/potic/potic-feedback/
+
+== Documentation
+
+== Documentation
+
+link:src/main/scripts/deploy.sh[HOWTO: start service as docker container, window="_blank"]
+
+link:src/docs/configuration-parameters.adoc[Service configuration parameters]
+
+link:src/docs/environments.adoc[Environments]

@@ -1,0 +1,108 @@
+plugins {
+    id 'com.gradle.build-scan' version '1.12.1'
+
+    id 'groovy'
+
+    id 'org.springframework.boot' version '1.5.9.RELEASE'
+
+    id 'jacoco'
+
+    id 'idea'
+}
+
+version = "${new File('VERSION').text}${project.hasProperty('patchVersion') ? '.' + patchVersion : '-SNAPSHOT'}"
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.6'
+}
+
+sourceSets {
+    integrationTest {
+        groovy {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration-test/groovy')
+        }
+        resources.srcDir file('src/integration-test/resources')
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all'
+
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+
+    compile 'org.slf4j:slf4j-api'
+    compile 'ch.qos.logback:logback-classic'
+    compile 'io.logz.logback:logzio-logback-appender:1.0.11'
+
+    compile 'com.ryantenney.metrics:metrics-spring:3.1.3'
+    compile 'io.dropwizard.metrics:metrics-core:3.2.3'
+    compile 'io.dropwizard.metrics:metrics-annotation:3.2.3'
+
+    compile 'org.apache.commons:commons-lang3:3.5'
+
+    testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+    testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4'
+    testCompile 'net.bytebuddy:byte-buddy:1.6.5'
+
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+
+    integrationTestCompile 'com.stehno.ersatz:ersatz:1.4.0'
+    integrationTestCompile 'io.undertow:undertow-servlet:1.4.15.Final'
+
+    integrationTestCompile 'org.testcontainers:testcontainers:1.4.2'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Version': version
+    }
+}
+
+buildScan {
+    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    licenseAgree = 'yes'
+}
+
+task integrationTest(type: Test) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    jacoco {
+        destinationFile = file("$buildDir/jacoco/test.exec")
+    }
+}
+check.dependsOn integrationTest
+integrationTest.mustRunAfter test
+
+jacocoTestReport {
+    executionData test, integrationTest
+
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+apply plugin: 'application'
+mainClassName = 'me.potic.feedback.Application'

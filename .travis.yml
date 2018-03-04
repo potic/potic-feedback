@@ -1,0 +1,54 @@
+sudo: required
+
+language: java
+
+services:
+- docker
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+before_install:
+- tar xvf deployment_keys.tar
+- chmod +x gradlew
+
+install:
+- "./gradlew build jacocoTestReport --scan -PpatchVersion=$TRAVIS_BUILD_NUMBER"
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+
+before_script:
+- docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+- eval "$(ssh-agent -s)"
+- chmod 600 deployment_keys/deploy_test
+- ssh-add deployment_keys/deploy_test
+- chmod 600 deployment_keys/deploy_prod
+- ssh-add deployment_keys/deploy_prod
+
+script:
+- export DOCKER_REPO=potic/potic-feedback
+- export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH | tr '/' '-' ; fi`
+- export TAG_VERSION=`cat VERSION`.$TRAVIS_BUILD_NUMBER
+- docker build -t $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER .
+- docker tag $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER $DOCKER_REPO:$TAG
+- docker tag $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER $DOCKER_REPO:$TAG_VERSION
+- docker push $DOCKER_REPO
+- if [ "$TRAVIS_BRANCH" == "develop" ]; then ssh -o "StrictHostKeyChecking no" "$DEPLOY_TEST_USER"@"$DEPLOY_TEST_HOST" TAG_TO_DEPLOY=$TAG_VERSION ENVIRONMENT_NAME=test LOGZIO_TOKEN=$LOGZIO_TOKEN 'bash -s' < src/main/scripts/deploy.sh; fi
+- if [ "$TRAVIS_BRANCH" == "master" ]; then ssh -o "StrictHostKeyChecking no" "$DEPLOY_PROD_USER"@"$DEPLOY_PROD_HOST" TAG_TO_DEPLOY=$TAG_VERSION ENVIRONMENT_NAME=prod LOGZIO_TOKEN=$LOGZIO_TOKEN 'bash -s' < src/main/scripts/deploy.sh; fi
+
+env:
+  global:
+  - secure: e3k+tPMvbq4hfHMLaLUkRCldc0GBGqLpc9H1iFQU+1nIYF9Ktxv3XllPyI0/AcVms+2Ny//bn/nQZB+fiMHoCGrQJ8LR7ZOYlxiulJUDf66V11ieJyUMq/I9y7oprgNGHiqvHpCvkMktY1m/XVH0z65LFYgJ3kyfUfa2sU36SUAl4r86SdO3ka6H7U2+jsJjiDRkG3yLaOIBbh8QB1FllLS2Qqq4HgcjrG21Qc+i9l4bKBjComeM77a6x2NpkwYpSaFDYjUdqxdxDdDnG62ORvrH6qHxmbapNTRmvb/TGe9XH8v7lok223s0Uq1AMGsZ/oFCBICujSuX+To+hDXABcUhBvlzfDO7LLmR/lrAbQhe23faPVcbdSbv3JqFQH2Gs/LgJHAHrpZ8B7mogepnzm8J1DXR2A879fP63M1miPYm8Jj0d2XXGkJLZ/nRcyrG17RGN9Jaiz0NbgbnQ3jgjIg0s3D0UcDWfWeaTrQKSOTGjakLafXQRsV9kiYe/Ibi8Jlua9OanpdmACQ7pWzQdSTv9CtHjGvt5idgWJ96veeTi0SqZF2GqYlmC0gJVyZq8dflR7jLvQd+o6TUUHCJ5oU4Z2/xkKMdvxsHf0uOy3KhPfaX/+B5lXlqQlZfOwoLHTLo0FmNJnRWT+5rLRKw31L+txEUqNOU5JxR260l+ss= # DOCKER_USERNAME
+  - secure: m5bijCboXPJLNMgTJ99o8/63hr9xG31yLpTwpKmgIEGcoFsvQlOFZ3cCz2GPq7sWwKpu2qVbvK4dmaFyK2rzgsU/Ca24IDqz3GbQEjlpjFKyXuwMprawaaLuFzKFi1grAj0QD532rjmyAhor3cqp70EQIR66k1fG0ZMDY123nA18pzK2JKgZ84+vjLxmPnV33/aY1cFj7eyNkrfP5udIMjvAUj3ME3o06mybDGgrWj3Lfz5K7DP2/DgCzeATk3q3iFGrmHs0vXveuJtMYqtTr/hIzOZTmr/tUIW9S+oJvkgDQ1d4P3/rwk5MstjF0eiAMjG/SyS+SvmUV3plKmsuv7wyt59uITL8/Qkh0FslbQzG1CC0YIdywhtOYwWERd3LKEyqussa5el5Ongnb355DsGc1BVWgync2NR03F4EAiJKMctU9FhCm/DBlqnvB9lDSp2srkKBBhyigIWl2AxZsWmn0pX6yKhq4cPNH7xuwkimmHiuP6ihiiR3JwzLMWMtA5CAzunN9jMtTCeO5NgLITD1t+npy6ujX+BB0T40kjJsoZrlFb7IBGrt2QcR+ZUNVHsh8dBRL5DUUYWNy4hBEbfIjGYHDO3GkmSt976McXYpcepyoy4QKM22oXsBPZPwMGH6vX8KhfbZTGNOJ/pVSl6ytEHxOjNzeb3lZ+Hfb+Y= # DOCKER_PASSWORD
+  - secure: TWVRD0Q3M56Ivqlrc9wscruRGXDOit7kUHSDPiIJkoL+yKnX8xvCB+u1tzqKsRLSi+Yrtr26hz7UwN1cJD9FmjolArMXS5jug2ItN8pszM5Xz/CS/udoJckPIlon66mb91e7veKfSqfFQZkPQ8/+2SzsYafHrzx6R8vbcJfsY6nIfOlVQlag7d67+1m3vyc2X/uclgd/lVTJSL0AJzkQWkaCPKBH3aFW6zPZ0s6zBz9R6sDwucBhxCUj9weyPMXEU72efaaMm/yDmTm8KmVw4JposqKlFg+f4PGX+9A+9SAkHZ5+Yw1zgrQKkdXgk0kmc+EkDx2tlHsB/buwDnPkE1ZV9TwiDdo/qGifKcJU40bXm977K0QcBpR+vEpdWOWHKIoK5ZwGro/JYDyWm2K9NwFjtwtgMqRCS0hhv1gQnc2HKlrBn3qeu6VN8xH6X+sEZ1xiOYKgUJav1z5S65MtTjGaykS1xFMCnbKUFOEreaDCmx4SdVSTmw4hjKRu1oMRaY54RywK/oJG5TVdAtaBKCXvx9s6n+NOFlaDhdnbQNZ7LhdOlzoG0U1SsorNgBqEsbylXIsRGjvfs+2SyYYkTCMMEb63/sp51g2/sklgF5p74Y5Dyh+AYZR0KIbupN6FwNaGJckcubAvpwnH3jv4cl2LK75F1TJpVVsKHsq+EH0= # DEPLOY_TEST_USER
+  - secure: cZVJ1bZQx3CVTfFcA5rU0um8UsrFTUV9/82i1A7CV3fGKkcIbdtv+UCmcmI2Ij7jL6pNUpzRzxz0/MUKE2QX6KT0f8eJAJcIYsJEc6AiLvQkT24BHc75/kiMnyupdGpu54tC6ApDtGRvs5W38WvCX8F+1a3gI1K4u2ieeW63ZTZc9PJmZUeK1f7EHXm07x2FchB5LUBZkfN5MWLu7uLgaGB58PE1AuQ/3lG4hg3i02t00T+3/iZE0Uxl1gxRBFFJQkTBOIkAXxkIJMNlX/CDQqHPKuP8miEZch2mCgy03uBAz6KlDuEw9xpD3/w3+cTzEfuNnukazB3gOk6VC6eZX1iRD4JiB1RBTxXEo70fSMsN8MzvRFuI2scttXMVmCMVvhaH+PRsr51kPgeZTbGSe/TSD1V40vSAwOWNcxQLTI6Hd/Kd80mDDyXqf5qLYecTsGjx9TqGFb0jtXBjdDWA5olYcIlxKX9LD774JblGSDU1sTxnoc0D1T6tVgN24lumBhKbG43ibpKl7Q48ZLdw/KYRpJpbg5Odm0qktg0GG4U5VniuatyJGmWFauxw1BIWU6MR5O8U8abmk0a/kb9FRGuMg40T3+Oh+OdqH90rt+KIc+wesc11nDYSPh/zWFKRmBXE0/+vnREkbWcKbIUcxsjXqDZdcCHBS27FPRXq/6A= # DEPLOY_TEST_HOST
+  - secure: qMIapSpCpGheOvxzSaAkb3P3/CVq819LVcCPr1PiYs1rby/vRtzP6utn9jqHDw3rPqgO5/cFiRbE2Vq/JOBIgEz2Xt+obd06xM+IOdGL/iSJt9lmu7jJAIgodsftyocksua7OV8k8Fw4paWu6gn1/52+hlouZWEvKS3OpJZlK13DaoMOCpwPgFor5lh6WMGKUMWnBhNL/2kppDvaXD50c6Blwj02kYMDJOzhvKKP/5MNg8LodjEIADt/bkJER1PZAj7/atdIXxg+bsWjj1xdup5X684JP75AQAo5FHwY9WuI48O4DSDrkvR5H97qKwbiKAXSLdMfU0r04JzgjkmmT8uZcFa6GeWvzO0MJMGDFr+J1tkB8RxT1yZTG6N1EYDaj52fKmN4t9TL0su2eXJ3I6pzRPzxhI9waf0fqMlJ1TfX6sxqxEE4oec4OZK8AtIIFWyKUHFlsJdd4CSOcjUb5npOb4I2BC5ZDB7vLh8JNKX2Ofu3nyTGZ0Sb1VIu8tBs5lvWH7T6q3f6tzNswcuvie9Aq0qOvyzXk0SHGD75F11eW6/l1PjPsksUAjBQ/9sq6650H/7BcHJtvC/VaQEg20I0uZKpzSfG3dpi/O/n7c4gij3UGzMqOd3ICQfJk1Sfs088UlVQ0XACuzjblaxojchrEpUqyhHEo9UfkVieR+s= # DEPLOY_PROD_USER
+  - secure: db9p5JU8c7w71T0gNbkxrPTaA8RJB65qdRoPZZBH9VvcRx5PDmBIiql6nPVKZzfWNjfoq+2TMzcPQA+i2MY606mWvQwaV2iB7t5g3WldcNPCs4RsKQsUBH9akNi+/UkBrT+ezr2RCiu5IEPmlDOWhBGukLfWZ9R5nJQ3c+vQSahYqahdQqEgqzU59CE5ZyghcamEXD5XxfctgDmt7kPRZMf7IHDmZG2znFpqVoabGefYDfwh8oTKsq66pi9erl3cSwP9hoJ7rBG4ZZLB/7IlJJbcigFEvnvXZckO2iVf4azRsM9/hhkOpPfE6aJAWh/8d4fBEvbdyiwtK9U1lPJVLziD3eyvv39KvkxGqhFIx25DSYrBZLJrJWayQ4I4h4u3FMrk8Sk2uDm2ODHaxqnZGYTYZe2EONCWP7eUrqZiJl7bdj8Lf+ut6obFhQlOPv9zkZWGImFH9+5VcYq2T1s4C9Dkc4AoGM+Zdb0yUh3/g1LBcgBj0yO13+6+IFDytfNO8cp+6+ZTqqvzy9eRGIWvg7WeZyQmtgr/HLVQpbOLaptvtt6BPSTFydthRjFjM7MDNgOhh2dat0V7YMvoGIefaVYvz1FVDkLkuA5ZB86ovwGZQATUDjDtXBkx7D+kyEsb/YDKntoUcMH/nh2/GOx96DwHNQWdR9Rz9ufZt6hfK6c= # DEPLOY_PROD_HOST
+  - secure: Q8G0aQwtcKTeM3HIsTelPOWzl6IVA34/LT3YBmTP1xQ3uoZHnG7PCvFlLjD/RPb7xjMA2sD9I6fNt4LY9BnBYkQZA0wWq2SF+zaXV/dWmbi9CN6Cd+ge7stVO5Z65qEuEAQoZg4lmql4udf1MmXUoavbLeRwLHBgUGFtg92uBpWhOdytJs2xz+bnXpZX2088ZR00Aodto8pUitcy9bNqBAzy0Y2rMZuM9GF+VJzWfDrjoTGm5YRb+exQxuvbF9rHmDKc0DVVCuxCF0IbVMfSic2ZAcbyFlcNJmU4mmIF5I6N0Jha3KqbC+W140bxKEOAN0WzzKL77oFknxJiSEU6gd5iwU3X4JS1ne7XkmXD61qjpw0y5DFjzmhCbLp9EzZPMhDpWZbQW6k5eji+3zWpmG7vC0FSxkFZPOyXtg0Kiw8hc1ej1PV0MmiNkYyM7n1SzOLuzgMOGTDw4WkdD5j/nd29MhSuMzOCmhsdAM/Yppo+uiazxugFEk7hexv0bKPFRgPP+gcwol0C2HQ3blTJz+6yRseTftLcyc+WRfLTVs4dJr76xb3lxqLJP1M0QDMAM5tDgCpMEsr3cGB5JeSpwKYRzAEfrDsu/tjWZhIJz/QgUWEb1IGJhQrNv7CeXi6Nq1U/jK+0wJD3Jd/hMgqoExkJfQvdpkfX8A+XH2Y3ekY= # LOGZIO_TOKEN

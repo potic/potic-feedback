@@ -3,8 +3,6 @@ package me.potic.feedback.domain
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
-import java.time.LocalDateTime
-
 @EqualsAndHashCode
 @ToString(includeNames = true)
 class ArticleEvent {
@@ -15,5 +13,5 @@ class ArticleEvent {
 
     ArticleEventType type
 
-    LocalDateTime timestamp
+    String timestamp
 }

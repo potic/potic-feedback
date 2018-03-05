@@ -19,7 +19,7 @@ class FeedbackService {
 
         try {
             if (articleEvent.timestamp == null) {
-                articleEvent.timestamp = LocalDateTime.now()
+                articleEvent.timestamp = LocalDateTime.now().toString()
             }
 
             if (articleEvent.articleId != null && articleEvent.type != null) {

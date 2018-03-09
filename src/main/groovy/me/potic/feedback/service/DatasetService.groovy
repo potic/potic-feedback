@@ -17,11 +17,12 @@ class DatasetService {
         log.info "getting events train dataset of size $count..."
 
         try {
-            List<String> result = [ 'id,user_id,read,read_time,has_image,has_video,word_count,source,showed_count,liked_count,disliked_count' ]
+            List<String> result = [ 'id,user_id,read,read_time,has_image,has_video,word_count,source,showed_count,skipped_count,liked_count,disliked_count' ]
 
             articlesService.getWithEvents(count).collect { Article article ->
 
                 int showed_count = article.events.count { event -> event.type == ArticleEventType.SHOWED }
+                int skipped_count = 0
                 int liked_count = article.events.count { event -> event.type == ArticleEventType.LIKED }
                 int disliked_count = article.events.count { event -> event.type == ArticleEventType.DISLIKED }
 
@@ -36,6 +37,7 @@ class DatasetService {
                         "${article.fromPocket.word_count != null ? Long.parseLong(article.fromPocket.word_count) : null}," +
                         "${article.card.source}," +
                         "${showed_count}," +
+                        "${skipped_count}," +
                         "${liked_count}," +
                         "${disliked_count}"
             }.forEach({ result.add(it) })

@@ -34,24 +34,21 @@ class EventsService {
         }
     }
 
-    List<String> getLastEvents(Integer count) {
+    List<List> getLastEvents(Integer count) {
         log.info "getting last $count events..."
 
         try {
-            List<String> lastEvents = articlesService.getWithEvents(null)
+            List<List> lastEvents = articlesService.getWithEvents(null)
                     .collect({ article -> article.events })
                     .flatten()
                     .sort({ ArticleEvent articleEvent -> articleEvent.timestamp })
                     .reverse()
                     .take(count)
                     .collect({ ArticleEvent articleEvent ->
-                        return  "${articleEvent.timestamp}," +
-                                "${articleEvent.type.toString()}," +
-                                "${articleEvent.articleId}," +
-                                "${articleEvent.userId}"
+                        [ articleEvent.timestamp, articleEvent.type, articleEvent.articleId, articleEvent.userId ]
                     })
 
-            return [ 'timestamp,type,articleId,userId' ] + lastEvents
+            return [[ 'timestamp', 'type', 'articleId', 'userId' ]] + lastEvents
         } catch (e) {
             log.error "getting last $count events failed: $e.message", e
             throw new RuntimeException("getting last $count events failed: $e.message", e)

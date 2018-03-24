@@ -3,6 +3,7 @@ package me.potic.feedback.controller
 import groovy.util.logging.Slf4j
 import me.potic.feedback.domain.ArticleEvent
 import me.potic.feedback.service.EventsService
+import me.potic.feedback.service.TableService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,6 +17,9 @@ class EventsController {
 
     @Autowired
     EventsService eventsService
+
+    @Autowired
+    TableService tableService
 
     @CrossOrigin
     @PostMapping(path = '/event')
@@ -41,7 +45,7 @@ class EventsController {
 
         try {
             response.outputStream.withPrintWriter { writer ->
-                eventsService.getLastEvents(count?:20).forEach({
+                tableService.table(eventsService.getLastEvents(count?:100)).forEach({
                     writer.write(it)
                     writer.write('\n')
                 })

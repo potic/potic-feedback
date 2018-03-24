@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 
 @Service
 @Slf4j
-class FeedbackService {
+class EventsService {
 
     @Autowired
     ArticlesService articlesService
@@ -31,6 +31,27 @@ class FeedbackService {
         } catch (e) {
             log.error "storing event ${articleEvent} failed: $e.message", e
             throw new RuntimeException("storing event ${articleEvent} failed: $e.message", e)
+        }
+    }
+
+    List<String> getLastEvents(Integer count) {
+        log.info "getting last $count events..."
+
+        try {
+            List<String> lastEvents = articlesService.getWithEvents(count)
+                    .collect({ article -> article.events })
+                    .flatten()
+                    .collect({ ArticleEvent articleEvent ->
+                        return  "${articleEvent.timestamp}," +
+                                "${articleEvent.type.toString()}," +
+                                "${articleEvent.articleId}," +
+                                "${articleEvent.userId}"
+                    })
+
+            return [ 'timestamp,type,articleId,userId' ] + lastEvents
+        } catch (e) {
+            log.error "getting last $count events failed: $e.message", e
+            throw new RuntimeException("getting last $count events failed: $e.message", e)
         }
     }
 }

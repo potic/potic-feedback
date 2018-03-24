@@ -2,8 +2,7 @@ package me.potic.feedback.controller
 
 import groovy.util.logging.Slf4j
 import me.potic.feedback.domain.ArticleEvent
-import me.potic.feedback.service.DatasetService
-import me.potic.feedback.service.FeedbackService
+import me.potic.feedback.service.EventsService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,18 +15,15 @@ import javax.servlet.http.HttpServletResponse
 class EventsController {
 
     @Autowired
-    FeedbackService feedbackService
-
-    @Autowired
-    DatasetService datasetService
+    EventsService eventsService
 
     @CrossOrigin
     @PostMapping(path = '/event')
-    @ResponseBody ResponseEntity<Void> event(@RequestBody ArticleEvent articleEvent) {
+    @ResponseBody ResponseEntity<Void> storeNewEvent(@RequestBody ArticleEvent articleEvent) {
         log.info "receive POST request for /event; body=${articleEvent}"
 
         try {
-            feedbackService.store(articleEvent)
+            eventsService.store(articleEvent)
             return new ResponseEntity<>(HttpStatus.OK)
         } catch (e) {
             log.error "POST request for /event; body=${articleEvent} failed: $e.message", e
@@ -36,23 +32,23 @@ class EventsController {
     }
 
     @CrossOrigin
-    @GetMapping(path = '/train')
-    void getEventsTrainDataset(
+    @GetMapping(path = '/event')
+    void getLastEvents(
             @RequestParam(value = 'count', required = false) Integer count,
             HttpServletResponse response
     ) {
-        log.info "receive GET request for /train?count=${count}"
+        log.info "receive GET request for /event?count=${count}"
 
         try {
             response.outputStream.withPrintWriter { writer ->
-                datasetService.getEventsTrainDataset(count).forEach({
+                eventsService.getLastEvents(count?:20).forEach({
                     writer.write(it)
                     writer.write('\n')
                 })
             }
         } catch (e) {
-            log.error "GET request for /train?count=${count} failed: $e.message", e
-            throw new RuntimeException("GET request for /train?count=${count} failed: $e.message", e)
+            log.error "GET request for /event?count=${count} failed: $e.message", e
+            throw new RuntimeException("GET request for /event?count=${count} failed: $e.message", e)
         }
     }
 }

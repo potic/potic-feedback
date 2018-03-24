@@ -51,7 +51,7 @@ class MonitoringService {
                     .take(count)
                     .collect({ ArticleEvent articleEvent ->
                         Article article = articles.find({ it.id == articleEvent.articleId })
-                        List<String> ranks = article.ranks.collect({ "${it.id}=${it.value}" })
+                        List<String> ranks = article.ranks.collect({ "${it.id}=${String.format(Locale.US, '%.4f', it.value)}" })
                         [ articleEvent.timestamp, articleEvent.type, ranks, article.card.source, articleEvent.articleId, articleEvent.userId ]
                     })
 

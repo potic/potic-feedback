@@ -50,10 +50,10 @@ class MonitoringService {
                     .take(count)
                     .collect({ ArticleEvent articleEvent ->
                         Article article = articles.find({ it.id == articleEvent.articleId })
-                        [ articleEvent.timestamp, articleEvent.type, article.ranks, article.card.source, article.card.title, articleEvent.articleId, articleEvent.userId ]
+                        [ articleEvent.timestamp, articleEvent.type, article.ranks, article.card.source, articleEvent.articleId, articleEvent.userId ]
                     })
 
-            return [[ 'timestamp', 'type', 'rank', 'source', 'title', 'articleId', 'userId' ]] + latestArticles
+            return [[ 'timestamp', 'type', 'rank', 'source', 'articleId', 'userId' ]] + latestArticles
         } catch (e) {
             log.error "monitoring latest $count articles failed: $e.message", e
             throw new RuntimeException("monitoring latest $count articles failed: $e.message", e)

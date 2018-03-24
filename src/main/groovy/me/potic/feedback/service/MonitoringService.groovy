@@ -51,7 +51,8 @@ class MonitoringService {
                     .take(count)
                     .collect({ ArticleEvent articleEvent ->
                         Article article = articles.find({ it.id == articleEvent.articleId })
-                        [ articleEvent.timestamp, articleEvent.type, article.ranks, article.card.source, articleEvent.articleId, articleEvent.userId ]
+                        Map<String, Double> ranks = article.ranks.collectEntries({ [ it.id, it.value ] })
+                        [ articleEvent.timestamp, articleEvent.type, ranks, article.card.source, articleEvent.articleId, articleEvent.userId ]
                     })
 
             return [[ 'timestamp', 'type', 'rank', 'source', 'articleId', 'userId' ]] + latestArticles
@@ -83,7 +84,7 @@ class MonitoringService {
                     })
 
             List<List> monitorRanks = ranks.collect({ rankId, errors ->
-                double error = Math.sqrt(errors.sum() / errors.count())
+                double error = Math.sqrt(errors.sum() / errors.size())
                 [ rankId, error ]
             })
 

@@ -32,7 +32,7 @@ class ArticlesService {
         }
     }
 
-    List<Article> getWithEvents(Integer count) {
+    List<Article> getWithEvents(Integer count = null) {
         log.debug "getting $count articles with events..."
 
         try {
@@ -62,6 +62,7 @@ class ArticlesService {
                         
                         card {
                             source
+                            title
                         }
                         
                         events {
@@ -69,6 +70,11 @@ class ArticlesService {
                             articleId
                             type
                             timestamp
+                        }
+                        
+                        ranks {
+                            id
+                            value
                         }
                       }
                     }

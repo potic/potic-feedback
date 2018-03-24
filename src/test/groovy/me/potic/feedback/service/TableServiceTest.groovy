@@ -14,7 +14,7 @@ class TableServiceTest extends Specification {
 
         then:
         actual == [ '         row1      row2',
-                    '          123     Hello', 
+                    '          123     Hello',
                     '   2828282828    World!' ]
     }
 }

@@ -23,7 +23,7 @@ class DatasetController {
             @RequestParam(value = 'count', required = false) Integer count,
             HttpServletResponse response
     ) {
-        log.info "receive GET request for /train?count=${count}"
+        log.debug "receive GET request for /train?count=${count}"
 
         try {
             response.outputStream.withPrintWriter { writer ->

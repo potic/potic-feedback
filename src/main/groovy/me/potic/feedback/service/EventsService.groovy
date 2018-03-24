@@ -33,25 +33,4 @@ class EventsService {
             throw new RuntimeException("storing event ${articleEvent} failed: $e.message", e)
         }
     }
-
-    List<List> getLastEvents(Integer count) {
-        log.info "getting last $count events..."
-
-        try {
-            List<List> lastEvents = articlesService.getWithEvents(null)
-                    .collect({ article -> article.events })
-                    .flatten()
-                    .sort({ ArticleEvent articleEvent -> articleEvent.timestamp })
-                    .reverse()
-                    .take(count)
-                    .collect({ ArticleEvent articleEvent ->
-                        [ articleEvent.timestamp, articleEvent.type, articleEvent.articleId, articleEvent.userId ]
-                    })
-
-            return [[ 'timestamp', 'type', 'articleId', 'userId' ]] + lastEvents
-        } catch (e) {
-            log.error "getting last $count events failed: $e.message", e
-            throw new RuntimeException("getting last $count events failed: $e.message", e)
-        }
-    }
 }

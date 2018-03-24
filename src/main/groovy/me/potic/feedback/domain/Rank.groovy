@@ -5,9 +5,9 @@ import groovy.transform.ToString
 
 @EqualsAndHashCode
 @ToString(includeNames = true)
-class Card {
+class Rank {
 
-    String source
+    String id
 
-    String title
+    double value
 }

@@ -51,7 +51,7 @@ class MonitoringService {
                     .take(count)
                     .collect({ ArticleEvent articleEvent ->
                         Article article = articles.find({ it.id == articleEvent.articleId })
-                        Map<String, Double> ranks = article.ranks.collectEntries({ [ it.id, it.value ] })
+                        List<String> ranks = article.ranks.collect({ "${it.id}=${it.value}" })
                         [ articleEvent.timestamp, articleEvent.type, ranks, article.card.source, articleEvent.articleId, articleEvent.userId ]
                     })
 
@@ -85,10 +85,10 @@ class MonitoringService {
 
             List<List> monitorRanks = ranks.collect({ rankId, errors ->
                 double error = Math.sqrt(errors.sum() / errors.size())
-                [ rankId, error ]
+                [ rankId, error, errors.size() ]
             })
 
-            return [[ 'rank', 'error' ]] + monitorRanks
+            return [[ 'rank', 'error', 'count' ]] + monitorRanks
         } catch (e) {
             log.error "monitoring ranks failed: $e.message", e
             throw new RuntimeException("monitoring ranks failed: $e.message", e)

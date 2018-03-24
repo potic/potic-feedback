@@ -5,6 +5,7 @@ import groovyx.net.http.HttpBuilder
 import me.potic.feedback.domain.Article
 import me.potic.feedback.domain.ArticleEvent
 import me.potic.feedback.domain.ArticleEventType
+import me.potic.feedback.domain.Rank
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -88,6 +89,7 @@ class ArticlesService {
 
             return response.data.withEvents.collect({
                 it['events'] = it['events'].collect({ event -> new ArticleEvent(userId: event['userId'], articleId: event['articleId'], type: ArticleEventType.valueOf(event['type']), timestamp: event['timestamp']) })
+                it['ranks'] = it['ranks'].collect({ rank -> new Rank(id: rank['id'], value: Double.parseDouble(rank['value'].toString())) })
                 new Article(it)
             })
         } catch (e) {

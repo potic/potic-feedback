@@ -38,9 +38,12 @@ class EventsService {
         log.info "getting last $count events..."
 
         try {
-            List<String> lastEvents = articlesService.getWithEvents(count)
+            List<String> lastEvents = articlesService.getWithEvents(null)
                     .collect({ article -> article.events })
                     .flatten()
+                    .sort({ ArticleEvent articleEvent -> articleEvent.timestamp })
+                    .reverse()
+                    .take(count)
                     .collect({ ArticleEvent articleEvent ->
                         return  "${articleEvent.timestamp}," +
                                 "${articleEvent.type.toString()}," +

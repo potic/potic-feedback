@@ -4,6 +4,7 @@ import groovy.util.logging.Slf4j
 import me.potic.feedback.domain.Article
 import me.potic.feedback.domain.ArticleEvent
 import me.potic.feedback.domain.ArticleEventType
+import me.potic.feedback.domain.Rank
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -57,6 +58,39 @@ class MonitoringService {
         } catch (e) {
             log.error "monitoring latest $count articles failed: $e.message", e
             throw new RuntimeException("monitoring latest $count articles failed: $e.message", e)
+        }
+    }
+
+    List<List> monitorRanks() {
+        log.debug "monitoring ranks..."
+
+        try {
+            List<Article> articles = articlesService.getWithEvents()
+            Map<String, List<Double>> ranks = [:]
+
+            articles.collect({ article -> article.events })
+                    .flatten()
+                    .findAll({ ArticleEvent articleEvent -> articleEvent.type == ArticleEventType.LIKED || articleEvent.type == ArticleEventType.DISLIKED })
+                    .forEach({ ArticleEvent articleEvent ->
+                        Article article = articles.find({ it.id == articleEvent.articleId })
+                        article.ranks.forEach({ Rank rank ->
+                            double expected = rank.value
+                            double actual = articleEvent.type == ArticleEventType.LIKED ? 1.0 : -1.0
+                            double error = (expected - actual) ** 2
+
+                            ranks.put(rank.id, ranks.getOrDefault(rank.id, []) + error)
+                        })
+                    })
+
+            List<List> monitorRanks = ranks.collect({ rankId, errors ->
+                double error = Math.sqrt(errors.sum() / errors.count())
+                [ rankId, error ]
+            })
+
+            return [[ 'rank', 'error' ]] + monitorRanks
+        } catch (e) {
+            log.error "monitoring ranks failed: $e.message", e
+            throw new RuntimeException("monitoring ranks failed: $e.message", e)
         }
     }
 }

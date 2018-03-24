@@ -26,12 +26,12 @@ class MonitoringController {
     TableService tableService
 
     @CrossOrigin
-    @GetMapping(path = '/monitor/event')
+    @GetMapping(path = '/monitor/events')
     void monitorLatestEvents(
             @RequestParam(value = 'count', required = false) Integer count,
             HttpServletResponse response
     ) {
-        log.debug "receive GET request for /monitor/event?count=${count}"
+        log.debug "receive GET request for /monitor/events?count=${count}"
 
         try {
             response.outputStream.withPrintWriter { writer ->
@@ -41,8 +41,8 @@ class MonitoringController {
                 })
             }
         } catch (e) {
-            log.error "GET request for /monitor/event?count=${count} failed: $e.message", e
-            throw new RuntimeException("GET request for /monitor/event?count=${count} failed: $e.message", e)
+            log.error "GET request for /monitor/events?count=${count} failed: $e.message", e
+            throw new RuntimeException("GET request for /monitor/events?count=${count} failed: $e.message", e)
         }
     }
 

@@ -118,6 +118,7 @@ class MonitoringService {
 
                 [ isActual, model.name, model.version, model.timestamp, model.description, error, size, errorAfterRelease, sizeAfterRelease ]
             })
+            .sort({ it[5] /* error */ })
 
             return [[ 'actual', 'name', 'version', 'timestamp', 'description', 'total error', 'total dataset size', 'after release error', 'after release dataset size' ]] + models
         } catch (e) {

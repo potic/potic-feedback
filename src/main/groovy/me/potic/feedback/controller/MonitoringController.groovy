@@ -68,20 +68,20 @@ class MonitoringController {
     }
 
     @CrossOrigin
-    @GetMapping(path = '/monitor/ranks')
+    @GetMapping(path = '/monitor/models')
     void monitorRanks(HttpServletResponse response) {
-        log.debug "receive GET request for /monitor/ranks"
+        log.debug "receive GET request for /monitor/models"
 
         try {
             response.outputStream.withPrintWriter { writer ->
-                tableService.table(monitoringService.monitorRanks()).forEach({
+                tableService.table(monitoringService.monitorModels()).forEach({
                     writer.write(it)
                     writer.write('\n')
                 })
             }
         } catch (e) {
-            log.error "GET request for /monitor/ranks failed: $e.message", e
-            throw new RuntimeException("GET request for /monitor/ranks failed: $e.message", e)
+            log.error "GET request for /monitor/models failed: $e.message", e
+            throw new RuntimeException("GET request for /monitor/models failed: $e.message", e)
         }
     }
 }

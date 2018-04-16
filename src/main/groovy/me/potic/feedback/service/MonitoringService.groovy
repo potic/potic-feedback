@@ -94,7 +94,7 @@ class MonitoringService {
 
                             if (model != null) {
                                 foundModels.add(model)
-                                if (articleEvent.timestamp > model.timestamp) {
+                                if (articleEvent.timestamp > model.timestamp && !articleEvent.timestamp.startsWith(model.timestamp)) {
                                     modelTestErrors.put(model, modelTestErrors.getOrDefault(model, []) + error)
                                 } else {
                                     modelTrainErrors.put(model, modelTrainErrors.getOrDefault(model, []) + error)

@@ -111,8 +111,16 @@ class MonitoringService {
                     status = '+'
                 }
 
-                double trainError = Math.sqrt(modelTrainErrors.get(model).sum() / modelTrainErrors.get(model).size())
-                int trainSize = modelTrainErrors.get(model).size()
+                double trainError
+                int trainSize
+
+                if (modelTestErrors.containsKey(model)) {
+                    trainError = Math.sqrt(modelTrainErrors.get(model).sum() / modelTrainErrors.get(model).size())
+                    trainSize = modelTrainErrors.get(model).size()
+                } else {
+                    trainError = 0.0
+                    trainSize = 0
+                }
 
                 double testError
                 int testSize

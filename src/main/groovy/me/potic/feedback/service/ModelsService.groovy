@@ -51,4 +51,20 @@ class ModelsService {
             throw new RuntimeException("requesting active models failed", e)
         }
     }
+
+    List<Model> getAllModels() {
+        log.debug "requesting all models..."
+
+        try {
+            def response = modelsServiceRest.get {
+                request.uri.path = '/all'
+                request.contentType = 'application/json'
+            }
+
+            return response.collect({ new Model(it) })
+        } catch (e) {
+            log.error "requesting all models failed: $e.message", e
+            throw new RuntimeException("requesting all models failed", e)
+        }
+    }
 }

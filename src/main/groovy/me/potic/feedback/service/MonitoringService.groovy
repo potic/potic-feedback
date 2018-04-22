@@ -80,28 +80,40 @@ class MonitoringService {
             Map<Model, List<Double>> modelTrainErrors = [:]
             Map<Model, List<Double>> modelTestErrors = [:]
 
-            articles.collect({ article -> article.events })
-                    .flatten()
-                    .findAll({ ArticleEvent articleEvent -> articleEvent.type == ArticleEventType.LIKED || articleEvent.type == ArticleEventType.DISLIKED })
-                    .forEach({ ArticleEvent articleEvent ->
-                        Article article = articles.find({ it.id == articleEvent.articleId })
-                        article.ranks.forEach({ Rank rank ->
-                            double expected = rank.value
-                            double actual = articleEvent.type == ArticleEventType.LIKED ? 1.0 : -1.0
-                            double error = (expected - actual) ** 2
+            articles.forEach({  Article article ->
+                double actual
+                String timestamp
 
-                            Model model = allModels.find({ rank.id == "${it.name}:${it.version}" })
+                if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.LIKED }) != null) {
+                    actual = 1.0
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.LIKED }).timestamp.max()
+                } else if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.DISLIKED }) != null) {
+                    actual = -1.0
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.DISLIKED }).timestamp.max()
+                } else if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.SKIPPED }) != null) {
+                    actual = -0.5
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.SKIPPED }).timestamp.max()
+                } else if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.SHOWED }) != null) {
+                    actual = -0.1
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.SHOWED }).timestamp.max()
+                }
 
-                            if (model != null) {
-                                foundModels.add(model)
-                                if (articleEvent.timestamp > model.timestamp && !articleEvent.timestamp.startsWith(model.timestamp)) {
-                                    modelTestErrors.put(model, modelTestErrors.getOrDefault(model, []) + error)
-                                } else {
-                                    modelTrainErrors.put(model, modelTrainErrors.getOrDefault(model, []) + error)
-                                }
-                            }
-                        })
-                    })
+                article.ranks.forEach({ Rank rank ->
+                    double expected = rank.value
+                    double error = (expected - actual) ** 2
+
+                    Model model = allModels.find({ rank.id == "${it.name}:${it.version}" })
+
+                    if (model != null) {
+                        foundModels.add(model)
+                        if (timestamp > model.timestamp && !timestamp.startsWith(model.timestamp)) {
+                            modelTestErrors.put(model, modelTestErrors.getOrDefault(model, []) + error)
+                        } else {
+                            modelTrainErrors.put(model, modelTrainErrors.getOrDefault(model, []) + error)
+                        }
+                    }
+                })
+            })
 
             List<List> models = foundModels.collect({ model ->
                 String status = '-'

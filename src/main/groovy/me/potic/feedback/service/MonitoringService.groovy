@@ -71,7 +71,6 @@ class MonitoringService {
 
         try {
             List<Model> allModels = modelsService.getAllModels()
-            List<Model> activeModels = modelsService.getActiveModels()
             Model actualModel = modelsService.getActualModel()
 
             List<Article> articles = articlesService.getWithEvents()
@@ -119,7 +118,7 @@ class MonitoringService {
                 String status = '-'
                 if (model == actualModel) {
                     status = '*'
-                } else if (activeModels.contains(model)) {
+                } else if (model.isActive) {
                     status = '+'
                 }
 

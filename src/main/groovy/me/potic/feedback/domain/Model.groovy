@@ -13,7 +13,7 @@ class Model {
 
     String description
 
-    String timestamp
+    String trainTimestamp
 
     boolean isActive
 }

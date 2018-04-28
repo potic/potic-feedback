@@ -86,16 +86,16 @@ class MonitoringService {
 
                 if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.LIKED }) != null) {
                     actual = 1.0
-                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.LIKED }).timestamp.max()
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.LIKED }).timestamp.min()
                 } else if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.DISLIKED }) != null) {
                     actual = -1.0
-                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.DISLIKED }).timestamp.max()
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.DISLIKED }).timestamp.min()
                 } else if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.SKIPPED }) != null) {
                     actual = -0.5
-                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.SKIPPED }).timestamp.max()
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.SKIPPED }).timestamp.min()
                 } else if (article.events.find({ articleEvent -> articleEvent.type == ArticleEventType.SHOWED }) != null) {
                     actual = -0.1
-                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.SHOWED }).timestamp.max()
+                    timestamp = article.events.findAll({ articleEvent -> articleEvent.type == ArticleEventType.SHOWED }).timestamp.min()
                 }
 
                 article.ranks.forEach({ Rank rank ->
@@ -106,7 +106,7 @@ class MonitoringService {
 
                     if (model != null) {
                         foundModels.add(model)
-                        if (timestamp > model.timestamp && !timestamp.startsWith(model.timestamp)) {
+                        if (timestamp > model.trainTimestamp && !timestamp.startsWith(model.trainTimestamp)) {
                             modelTestErrors.put(model, modelTestErrors.getOrDefault(model, []) + error)
                         } else {
                             modelTrainErrors.put(model, modelTrainErrors.getOrDefault(model, []) + error)
@@ -145,11 +145,11 @@ class MonitoringService {
                     testSize = 0
                 }
 
-                [ status, model.name, model.version, model.timestamp, model.description, trainError, trainSize, testError, testSize ]
+                [ status, model.name, model.version, model.trainTimestamp, model.description, trainError, trainSize, testError, testSize ]
             })
             .sort({ it[8] > 0 ? it[7] : Double.MAX_VALUE })
 
-            return [[ 'status', 'name', 'version', 'timestamp', 'description', 'train error', 'train size', 'test error', 'test size' ]] + models
+            return [[ 'status', 'name', 'version', 'train timestamp', 'description', 'train error', 'train size', 'test error', 'test size' ]] + models
         } catch (e) {
             log.error "monitoring models failed: $e.message", e
             throw new RuntimeException("monitoring models failed: $e.message", e)

@@ -146,7 +146,7 @@ class MonitoringService {
 
                 [ status, model.name, model.version, model.trainTimestamp, model.description, trainError, trainSize, testError, testSize ]
             })
-            .sort({ it[8] > 0 ? it[7] : Double.MAX_VALUE })
+            .sort({ it[8] > 0 ? it[7] : it[5] })
 
             return [[ 'status', 'name', 'version', 'train timestamp', 'description', 'train error', 'train size', 'test error', 'test size' ]] + models
         } catch (e) {

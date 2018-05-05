@@ -17,7 +17,7 @@ class Model {
 
     String trainTimestamp
 
-    String serializedModel
+    String serializedModelId
 
     boolean isActive
 }
